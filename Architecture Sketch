@@ -1,0 +1,42 @@
+# Architecture Sketch
+
+How Drive, Claude, the API and the scheduler connect.
+
+![Architecture diagram](architecture.svg)
+
+## Components
+
+| Component | Role |
+|---|---|
+| Trainer Central | Emails the trainer when a participant submits an assignment |
+| Trainer's Google Drive folder | The trainer saves each email as a separate `.txt` file |
+| Windows Task Scheduler | Starts `app.py` every 30 minutes with no manual trigger |
+| `app.py` (my laptop) | Orchestrates each run |
+| Claude API | Reads one email, decides if it is mine, returns JSON details |
+| `state.db` (SQLite) | Remembers processed Drive file IDs so nothing is posted twice |
+| Dashboard API (Render) | Receives entries via `POST /api/entries` |
+| `logs/run.log` | Records files seen, files matched and API status for every run |
+
+## Flow of one run
+
+1. Task Scheduler starts `app.py`.
+2. The app lists the `.txt` files in the Drive folder and skips file IDs already in `state.db`.
+3. For each new file, the text and `prompt.txt` go to Claude, which returns JSON: `is_mine`, assignment name, submission time, status, other details.
+4. If the email is not mine or the file is empty, it is recorded as processed and skipped.
+5. If it is mine, the app calls `GET /health` (Render wakes slowly), checks the dashboard for the file's `[drive-file:<id>]` marker, then calls `POST /api/entries` with `sender` = my name.
+6. On success the file is recorded in `state.db`. On a Claude or API failure it is left unrecorded and retried on the next run.
+7. The run summary is written to `logs/run.log`.
+
+## Text diagram
+
+```
+Trainer Central --> Drive folder (.txt) --+
+                                          v
+Task Scheduler (30 min) --> app.py --> Claude API (is mine? + JSON)
+                              |  ^
+                              |  +--- state.db (processed files)
+                              v
+                     Dashboard API (POST /api/entries)
+                              |
+                              +--- logs/run.log
+```
