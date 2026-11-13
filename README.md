@@ -27,14 +27,14 @@ A local Python app that reads Trainer Central submission emails (saved as `.txt`
 
 ```mermaid
 flowchart LR
-  S[Windows Task Scheduler<br/>every 30 min] --> A[app.py]
-  D[(Trainer's Drive folder<br/>.txt emails)] -->|Drive API, new files only| A
-  A -->|email text + prompt.txt| C[Claude API<br/>is_mine + JSON details]
->>>>>>> f26a5f5b1e0cef73cb24e2dbabc67f8450cddbb7
-  C --> A
-  A -->|GET /health, POST /api/entries| API[Dashboard API on Render]
-  A <--> DB[(state.db SQLite<br/>processed files)]
-  A --> L[logs/run.log]
+    S["Scheduler: Windows Task Scheduler<br/>Every 30 minutes"] --> A["app.py"]
+    D[("Google Drive folder<br/>.txt submission emails")] -->|"Drive API: new files only"| A
+    A -->|"Email text + prompt.txt"| C["Claude API<br/>Classification + JSON extraction"]
+    C -->|"is_mine + assignment details"| A
+    A -->|"POST /api/entries"| API["Trainer Central Dashboard API"]
+    API --> DB[("Dashboard")]
+    A --> STATE[("SQLite state.db<br/>Duplicate prevention")]
+    A --> LOG[("logs/run.log")]
 ```
 
 <<<<<<< HEAD
