@@ -5,27 +5,11 @@ A local Python app that reads Trainer Central submission emails (saved as `.txt`
 - **Participant:** upendarduggineni (upendarduggineni24@gmail.com)
 - **Dashboard:** https://trainer-central-assigments-api.onrender.com (API docs at `/docs`)
 
-## Architecture
-
-![Architecture](architecture.svg)
-
-```mermaid
-flowchart LR
-  S[Windows Task Scheduler<br/>every 30 min] --> A[app.py]
-  D[(Trainer's Drive folder<br/>.txt emails)] -->|Drive API, new files only| A
-  A -->|email text + prompt.txt| C[Claude API<br/>is_mine + JSON details]
-  C --> A
-  A -->|GET /health, POST /api/entries| API[Dashboard API on Render]
-  A <--> DB[(state.db SQLite<br/>processed files)]
-  A --> L[logs/run.log]
-```
-
-**Flow per run:** list the `.txt` files in the Drive folder -> skip file IDs already in `state.db` -> read the file -> Claude returns JSON -> if the email is mine, call `GET /health` (Render wakes slowly), check the dashboard does not already hold this file, then `POST /api/entries` with `sender` = my name -> record the file as processed.
-
 ## Files
 
 | File | Purpose |
 |---|---|
+| `ARCHITECTURE.md` / `architecture.svg` | Architecture sketch (separate deliverable) |
 | `app.py` | Main application (Drive fetch, Claude analysis, API push, dedupe, logging) |
 | `prompt.txt` | The Claude prompt (match rules and the JSON output format) |
 | `run_windows.bat` / `run_unix.sh` | Entry points the scheduler calls |
